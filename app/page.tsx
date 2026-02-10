@@ -30,8 +30,8 @@ export default function Page() {
             </div>
 
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {books.map((book) => (
-                <BookCard key={book.id} book={book} />
+              {books.map((book, index) => (
+                <BookCard key={book.id} book={book} priority={index < 3} />
               ))}
             </div>
 

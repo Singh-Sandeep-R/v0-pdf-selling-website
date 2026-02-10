@@ -8,7 +8,7 @@ import Link from "next/link";
 import { BookOpen, Layers, FileText, ArrowRight } from "lucide-react";
 import type { Book } from "@/lib/books";
 
-export function BookCard({ book }: { book: Book }) {
+export function BookCard({ book, priority = false }: { book: Book; priority?: boolean }) {
   const [isHovered, setIsHovered] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -72,6 +72,7 @@ export function BookCard({ book }: { book: Book }) {
             fill
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={priority}
           />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
