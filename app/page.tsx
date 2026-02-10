@@ -2,6 +2,7 @@ import { books } from "@/lib/books";
 import { ParticleBackground } from "@/components/particle-background";
 import { Navbar } from "@/components/navbar";
 import { HeroSection } from "@/components/hero-section";
+import { SkillsMarquee } from "@/components/skills-marquee";
 import { BookCard } from "@/components/book-card";
 import { Footer } from "@/components/footer";
 
@@ -13,15 +14,15 @@ export default function Page() {
         <Navbar />
         <HeroSection />
 
+        {/* Skills Marquee */}
+        <SkillsMarquee />
+
         {/* Books Section */}
-        <section id="books" className="px-6 py-16">
+        <section id="books" className="px-6 pb-16 pt-8">
           <div className="mx-auto max-w-7xl">
             <div className="mb-12 text-center">
-              <span className="font-mono text-sm text-primary">
-                {"// explore the collection"}
-              </span>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-                Choose Your Next Read
+              <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+                Our <span className="text-primary">Collection</span>
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
                 Each book is designed to take you from concepts to
