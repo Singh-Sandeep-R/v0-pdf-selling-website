@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
 export async function POST(request: Request) {
   try {
@@ -22,31 +20,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Store message in data/messages.json
-    const messagesPath = path.join(process.cwd(), "data", "messages.json");
-
-    let messages = [];
-    try {
-      const existing = fs.readFileSync(messagesPath, "utf-8");
-      messages = JSON.parse(existing);
-    } catch {
-      // File doesn't exist yet, start fresh
+    const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
+    if (!accessKey) {
+      return NextResponse.json(
+        { error: "Email service not configured" },
+        { status: 500 }
+      );
     }
 
-    const newMessage = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-      name,
-      email,
-      subject,
-      message,
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
+    // Send email via Web3Forms (free, delivers to your inbox)
+    const web3Response = await fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        access_key: accessKey,
+        subject: `[SkillCrazyAI] ${subject}`,
+        from_name: name,
+        replyto: email,
+        message: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
+      }),
+    });
 
-    messages.push(newMessage);
-    fs.writeFileSync(messagesPath, JSON.stringify(messages, null, 2));
+    const result = await web3Response.json();
 
-    return NextResponse.json({ success: true, messageId: newMessage.id });
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Failed to send message" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(
       { error: "Failed to send message" },
