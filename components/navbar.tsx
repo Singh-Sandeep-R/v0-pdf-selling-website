@@ -29,12 +29,12 @@ export function Navbar() {
             <BookOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Library</span>
           </Link>
-          <a
-            href="mailto:skillcrazyai@gmail.com"
+          <Link
+            href="/contact"
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-all hover:border-primary/50 hover:bg-primary/5"
           >
             Contact
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
