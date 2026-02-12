@@ -56,11 +56,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // In production, serve the actual PDF file from secure storage.
-    // For demo, we generate a placeholder response that shows it works.
+    // Serve PDF from private data/books/ folder (not publicly accessible)
     const pdfPath = path.join(
       process.cwd(),
-      "public",
+      "data",
       "books",
       `${bookId}.pdf`
     );
