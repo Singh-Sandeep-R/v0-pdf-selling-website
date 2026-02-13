@@ -226,8 +226,8 @@ export function CheckoutClient({ book }: { book: Book }) {
               </div>
             </div>
 
-            {/* Free Test Download for python-ds-handbook */}
-            {book.id === "python-ds-handbook" && step === "details" && (
+            {/* Free Test Download for intro-econometrics */}
+            {book.id === "intro-econometrics" && step === "details" && (
               <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center">
                 <p className="mb-3 text-sm font-semibold text-primary">
                   Free Test Download Available
