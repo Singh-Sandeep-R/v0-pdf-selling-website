@@ -213,10 +213,10 @@ export function CheckoutClient({ book }: { book: Book }) {
                 <div className="text-right">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-foreground">
-                      ${book.price}
+                      {"₹"}{book.price}
                     </span>
                     <span className="text-sm text-muted-foreground line-through">
-                      ${book.originalPrice}
+                      {"₹"}{book.originalPrice}
                     </span>
                   </div>
                   <span className="font-mono text-xs text-primary">
@@ -346,10 +346,7 @@ export function CheckoutClient({ book }: { book: Book }) {
                           AMOUNT TO PAY
                         </span>
                         <div className="mt-1 text-xl font-bold text-foreground">
-                          ${book.price}{" "}
-                          <span className="text-sm font-normal text-muted-foreground">
-                            (INR equivalent)
-                          </span>
+                          {"₹"}{book.price}
                         </div>
                       </div>
 

@@ -19,8 +19,8 @@ export const books: Book[] = [
     subtitle: "50+ Essential Concepts Using R and Python",
     description:
       "A hands-on guide to the essential statistical concepts every data scientist needs. Covers exploratory data analysis, distributions, statistical experiments, regression, classification, and more with practical R and Python examples.",
-    price: 20,
-    originalPrice: 39.99,
+    price: 1699,
+    originalPrice: 3299,
     coverImage: "/books/practical-stats-cover.jpg",
     chapters: 14,
     pages: 368,
@@ -40,8 +40,8 @@ export const books: Book[] = [
     subtitle: "Essential Tools for Working with Data",
     description:
       "A comprehensive guide to the core libraries of Python's data science stack. Master IPython, NumPy, Pandas, Matplotlib, and Scikit-Learn with practical examples and real-world data analysis techniques.",
-    price: 10,
-    originalPrice: 24.99,
+    price: 849,
+    originalPrice: 1999,
     coverImage: "/books/python-ds-handbook-cover.jpg",
     chapters: 16,
     pages: 548,
@@ -61,8 +61,8 @@ export const books: Book[] = [
     subtitle: "Global Edition - Fourth Edition",
     description:
       "A thorough introduction to econometric methods and their real-world applications. Covers regression analysis, causal inference, time series, panel data, and instrumental variables with rigorous yet accessible explanations.",
-    price: 15,
-    originalPrice: 34.99,
+    price: 1249,
+    originalPrice: 2899,
     coverImage: "/books/intro-econometrics-cover.jpg",
     chapters: 19,
     pages: 768,

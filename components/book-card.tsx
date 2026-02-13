@@ -44,7 +44,7 @@ export function BookCard({ book, priority = false }: { book: Book; priority?: bo
       style={{ perspective: "1000px" }}
     >
       <div
-        className="relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-500 ease-out"
+        className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-500 ease-out"
         style={{
           transform: isHovered
             ? `rotateY(${mousePos.x * 12}deg) rotateX(${-mousePos.y * 12}deg) translateZ(20px)`
@@ -93,7 +93,7 @@ export function BookCard({ book, priority = false }: { book: Book; priority?: bo
         </div>
 
         {/* Content */}
-        <div className="relative z-10 -mt-20 p-6">
+        <div className="relative z-10 -mt-20 flex flex-1 flex-col p-6">
           <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary">
             {book.title}
           </h3>
@@ -139,13 +139,13 @@ export function BookCard({ book, priority = false }: { book: Book; priority?: bo
           </div>
 
           {/* Price & CTA */}
-          <div className="mt-5 flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between pt-5">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-foreground">
-                ${book.price}
+                {"₹"}{book.price}
               </span>
               <span className="text-sm text-muted-foreground line-through">
-                ${book.originalPrice}
+                {"₹"}{book.originalPrice}
               </span>
             </div>
             <Link
