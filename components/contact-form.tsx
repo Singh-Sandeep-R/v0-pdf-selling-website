@@ -12,10 +12,12 @@ export function ContactForm() {
     message: "",
   });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending");
+    setErrorMsg("");
 
     try {
       const res = await fetch("/api/contact", {
@@ -24,13 +26,17 @@ export function ContactForm() {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (res.ok && data.success) {
         setStatus("sent");
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
+        setErrorMsg(data.error || "Something went wrong.");
         setStatus("error");
       }
     } catch {
+      setErrorMsg("Network error. Please check your connection and try again.");
       setStatus("error");
     }
   }
@@ -186,7 +192,8 @@ export function ContactForm() {
 
           {status === "error" && (
             <p className="text-sm text-destructive">
-              Something went wrong. Please try again or email us directly.
+              {errorMsg || "Something went wrong."} You can also email us directly at{" "}
+              <a href="mailto:skillcrazyai@gmail.com" className="underline">skillcrazyai@gmail.com</a>.
             </p>
           )}
 

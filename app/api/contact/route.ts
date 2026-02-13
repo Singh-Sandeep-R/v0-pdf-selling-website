@@ -34,9 +34,10 @@ export async function POST(request: Request) {
       subject: `[SkillCrazyAI] ${subject}`,
       from_name: name,
       replyto: email,
-      name: name,
-      email: email,
-      message: `From: ${name} (${email})\nSubject: ${subject}\n\n${message}`,
+      "Sender Name": name,
+      "Sender Email": email,
+      "Subject": subject,
+      "Message": message,
     };
 
     const web3Response = await fetch("https://api.web3forms.com/submit", {
