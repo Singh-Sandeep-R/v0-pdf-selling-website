@@ -34,7 +34,7 @@ export function BookCard({ book, priority = false }: { book: Book; priority?: bo
   return (
     <div
       ref={cardRef}
-      className="group relative"
+      className="group relative h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);

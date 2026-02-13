@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, subject, message } = await request.json();
+    const body = await request.json();
+    const { name, email, subject, message } = body;
 
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
@@ -11,7 +12,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -22,38 +22,48 @@ export async function POST(request: Request) {
 
     const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
     if (!accessKey) {
+      console.error("[v0] WEB3FORMS_ACCESS_KEY is not set");
       return NextResponse.json(
-        { error: "Email service not configured" },
+        { error: "Email service not configured. Please contact skillcrazyai@gmail.com directly." },
         { status: 500 }
       );
     }
 
-    // Send email via Web3Forms (free, delivers to your inbox)
+    const payload = {
+      access_key: accessKey,
+      subject: `[SkillCrazyAI] ${subject}`,
+      from_name: name,
+      replyto: email,
+      name: name,
+      email: email,
+      message: `From: ${name} (${email})\nSubject: ${subject}\n\n${message}`,
+    };
+
     const web3Response = await fetch("https://api.web3forms.com/submit", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        access_key: accessKey,
-        subject: `[SkillCrazyAI] ${subject}`,
-        from_name: name,
-        replyto: email,
-        message: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(payload),
     });
 
     const result = await web3Response.json();
+    console.log("[v0] Web3Forms response:", JSON.stringify(result));
 
     if (!result.success) {
+      console.error("[v0] Web3Forms error:", result.message);
       return NextResponse.json(
-        { error: "Failed to send message" },
+        { error: result.message || "Failed to send message" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error("[v0] Contact API error:", err);
     return NextResponse.json(
-      { error: "Failed to send message" },
+      { error: "Failed to send message. Please try again." },
       { status: 500 }
     );
   }
