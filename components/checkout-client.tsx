@@ -226,6 +226,25 @@ export function CheckoutClient({ book }: { book: Book }) {
               </div>
             </div>
 
+            {/* Free Test Download for python-ds-handbook */}
+            {book.id === "python-ds-handbook" && step === "details" && (
+              <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center">
+                <p className="mb-3 text-sm font-semibold text-primary">
+                  Free Test Download Available
+                </p>
+                <a
+                  href={`/api/download?bookId=${book.id}&txnId=TEST-FREE`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/25"
+                >
+                  <Download className="h-5 w-5" />
+                  Download Free (Test)
+                </a>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  This is a temporary test link to verify PDF downloads work.
+                </p>
+              </div>
+            )}
+
             {/* Step 1: Details */}
             {step === "details" && (
               <div className="rounded-xl border border-border bg-card p-6 md:p-8">
