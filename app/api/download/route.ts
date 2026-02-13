@@ -24,8 +24,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Book not found." }, { status: 404 });
     }
 
-    // Allow free test download for intro-econometrics with test txn ID
-    const isTestDownload = bookId === "intro-econometrics" && txnId === "TEST-FREE";
+    // Allow free test download with test txn ID (temporary for testing)
+    const isTestDownload = txnId === "TEST-FREE";
 
     if (!isTestDownload) {
       // Verify the transaction exists in orders
