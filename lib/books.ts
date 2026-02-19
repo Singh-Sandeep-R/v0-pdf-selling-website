@@ -22,8 +22,8 @@ export const books: Book[] = [
     price: 1699,
     originalPrice: 3299,
     coverImage: "/books/practical-stats-cover.jpg",
-    chapters: 14,
-    pages: 368,
+    chapters: 7,
+    pages: 363,
     topics: [
       "Exploratory Data Analysis",
       "Statistical Experiments",
@@ -40,11 +40,11 @@ export const books: Book[] = [
     subtitle: "Essential Tools for Working with Data",
     description:
       "A comprehensive guide to the core libraries of Python's data science stack. Master IPython, NumPy, Pandas, Matplotlib, and Scikit-Learn with practical examples and real-world data analysis techniques.",
-    price: 849,
+    price: 1,
     originalPrice: 1999,
     coverImage: "/books/python-ds-handbook-cover.jpg",
-    chapters: 16,
-    pages: 548,
+    chapters: 50,
+    pages: 591,
     topics: [
       "NumPy",
       "Pandas",
@@ -65,7 +65,7 @@ export const books: Book[] = [
     originalPrice: 2899,
     coverImage: "/books/intro-econometrics-cover.jpg",
     chapters: 19,
-    pages: 768,
+    pages: 801,
     topics: [
       "Regression Analysis",
       "Causal Inference",
