@@ -1,92 +1,60 @@
 import { NextResponse } from "next/server";
-import { books } from "@/lib/books";
-import fs from "node:fs";
-import path from "node:path";
+import fs from "fs";
+import path from "path";
 
 const ORDERS_FILE = path.join(process.cwd(), "data", "orders.json");
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const bookId = searchParams.get("bookId");
-    const txnId = searchParams.get("txnId");
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token");
 
-    if (!bookId || !txnId) {
-      return NextResponse.json(
-        { error: "Missing bookId or transaction ID." },
-        { status: 400 }
-      );
-    }
-
-    // Verify the book exists
-    const book = books.find((b) => b.id === bookId);
-    if (!book) {
-      return NextResponse.json({ error: "Book not found." }, { status: 404 });
-    }
-
-    // Verify the transaction exists in orders
-    let orders: Array<{
-      bookId: string;
-      transactionId: string;
-      status: string;
-    }> = [];
-    try {
-      if (fs.existsSync(ORDERS_FILE)) {
-        const data = fs.readFileSync(ORDERS_FILE, "utf-8");
-        orders = JSON.parse(data);
-      }
-    } catch {
-      // If orders file doesn't exist or is corrupted
-    }
-
-    const validOrder = orders.find(
-      (o) =>
-        o.bookId === bookId &&
-        o.transactionId === txnId &&
-        o.status === "confirmed"
-    );
-
-    if (!validOrder) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid or unconfirmed transaction. Please complete payment first.",
-        },
-        { status: 403 }
-      );
-    }
-
-    // In production, serve the actual PDF file from secure storage.
-    // For demo, we generate a placeholder response that shows it works.
-    const pdfPath = path.join(
-      process.cwd(),
-      "public",
-      "books",
-      `${bookId}.pdf`
-    );
-
-    if (fs.existsSync(pdfPath)) {
-      const pdfBuffer = fs.readFileSync(pdfPath);
-      return new NextResponse(pdfBuffer, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${book.title.replace(/\s+/g, "-")}.pdf"`,
-        },
-      });
-    }
-
-    // If no PDF exists yet, return a message
-    return NextResponse.json(
-      {
-        message: `Thank you for purchasing "${book.title}". Your PDF will be delivered shortly. Transaction: ${txnId}`,
-        note: "Place your PDF files in /public/books/{book-id}.pdf to enable downloads.",
-      },
-      { status: 200 }
-    );
-  } catch {
-    return NextResponse.json(
-      { error: "Internal server error." },
-      { status: 500 }
-    );
+  if (!token) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
+
+  if (!fs.existsSync(ORDERS_FILE)) {
+    return NextResponse.json({ error: "No orders found" }, { status: 404 });
+  }
+
+  const orders = JSON.parse(fs.readFileSync(ORDERS_FILE, "utf-8"));
+
+  const order = orders.find((o: any) => o.token === token);
+
+  if (!order) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 403 });
+  }
+  // Check if token expired
+const now = new Date();
+const expiry = new Date(order.expiresAt);
+
+if (now > expiry) {
+  return NextResponse.json(
+    { error: "Download link has expired." },
+    { status: 403 }
+  );
+}
+
+
+const fileName = order.bookId.replace(/-/g, " ");
+const pdfPath = path.join(
+  process.cwd(),
+  "data",
+  "books",
+  `${order.bookId}.pdf`
+);
+
+
+  if (!fs.existsSync(pdfPath)) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
+  }
+
+  const pdfBuffer = fs.readFileSync(pdfPath);
+
+  return new NextResponse(pdfBuffer, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${order.bookId}.pdf"`,
+
+    },
+  });
 }

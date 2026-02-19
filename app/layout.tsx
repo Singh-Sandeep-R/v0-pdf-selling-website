@@ -1,7 +1,8 @@
+
 import React from "react"
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,12 +32,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+<html lang="en">
+  <body
+    className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+  >
+    <Script
+      src="https://checkout.razorpay.com/v1/checkout.js"
+      strategy="beforeInteractive"
+    />
+    {children}
+  </body>
+</html>
   );
 }

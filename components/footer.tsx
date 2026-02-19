@@ -1,4 +1,5 @@
-import { Terminal } from "lucide-react";
+import Link from "next/link";
+import { Terminal, Mail } from "lucide-react";
 
 export function Footer() {
   return (
@@ -12,13 +13,16 @@ export function Footer() {
             <span className="font-bold text-foreground">SkillCrazyAI</span>
           </div>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Empowering data science learners with premium technical content.
-          </p>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link href="/" className="transition-colors hover:text-foreground">Books</Link>
+            <Link href="/contact" className="transition-colors hover:text-foreground">Contact</Link>
+            <a href="mailto:skillcrazyai@gmail.com" className="flex items-center gap-1.5 transition-colors hover:text-primary">
+              <Mail className="h-3.5 w-3.5" />
+              skillcrazyai@gmail.com
+            </a>
+          </div>
 
           <div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
-            <span>Built with passion</span>
-            <span className="text-primary">|</span>
             <span>SkillCrazyAI &copy; {new Date().getFullYear()}</span>
           </div>
         </div>

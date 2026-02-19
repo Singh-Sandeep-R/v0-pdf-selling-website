@@ -8,7 +8,7 @@ import Link from "next/link";
 import { BookOpen, Layers, FileText, ArrowRight } from "lucide-react";
 import type { Book } from "@/lib/books";
 
-export function BookCard({ book }: { book: Book }) {
+export function BookCard({ book, priority = false }: { book: Book; priority?: boolean }) {
   const [isHovered, setIsHovered] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -34,7 +34,7 @@ export function BookCard({ book }: { book: Book }) {
   return (
     <div
       ref={cardRef}
-      className="group relative"
+      className="group relative h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
@@ -44,7 +44,7 @@ export function BookCard({ book }: { book: Book }) {
       style={{ perspective: "1000px" }}
     >
       <div
-        className="relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-500 ease-out"
+        className="relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-500 ease-out"
         style={{
           transform: isHovered
             ? `rotateY(${mousePos.x * 12}deg) rotateX(${-mousePos.y * 12}deg) translateZ(20px)`
@@ -72,6 +72,7 @@ export function BookCard({ book }: { book: Book }) {
             fill
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={priority}
           />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
@@ -92,7 +93,7 @@ export function BookCard({ book }: { book: Book }) {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 -mt-20 p-6">
+        <div className="relative z-10 -mt-20 flex flex-1 flex-col p-6">
           <h3 className="text-xl font-bold text-foreground transition-colors group-hover:text-primary">
             {book.title}
           </h3>
@@ -138,13 +139,13 @@ export function BookCard({ book }: { book: Book }) {
           </div>
 
           {/* Price & CTA */}
-          <div className="mt-5 flex items-center justify-between">
+          <div className="mt-auto flex items-center justify-between pt-5">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-foreground">
-                ${book.price}
+                {"₹"}{book.price}
               </span>
               <span className="text-sm text-muted-foreground line-through">
-                ${book.originalPrice}
+                {"₹"}{book.originalPrice}
               </span>
             </div>
             <Link

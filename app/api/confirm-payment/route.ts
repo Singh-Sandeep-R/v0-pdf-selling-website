@@ -101,6 +101,43 @@ export async function POST(request: Request) {
     orders.push(order);
     saveOrders(orders);
 
+    // Send confirmation email to buyer and notification to admin via Web3Forms
+    const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
+    if (accessKey) {
+      try {
+        // Notify admin (you) about the purchase
+        await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            access_key: accessKey,
+            subject: `[SkillCrazyAI] New Purchase: ${book.title}`,
+            from_name: "SkillCrazyAI Store",
+            name: buyerName,
+            email: buyerEmail,
+            message: `New book purchase!\n\nBook: ${book.title}\nBuyer: ${buyerName}\nEmail: ${buyerEmail}\nAmount: ₹${book.price}\nTransaction ID: ${transactionId}\nDate: ${new Date().toLocaleString("en-IN")}\n\nOrder has been confirmed and download link provided.`,
+          }),
+        });
+
+        // Send confirmation to buyer
+        await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            access_key: accessKey,
+            subject: `[SkillCrazyAI] Your purchase of "${book.title}" is confirmed!`,
+            from_name: "SkillCrazyAI",
+            replyto: "skillcrazyai@gmail.com",
+            email: buyerEmail,
+            message: `Hi ${buyerName},\n\nThank you for purchasing "${book.title}"!\n\nOrder Details:\n- Book: ${book.title}\n- Amount: ₹${book.price}\n- Transaction ID: ${transactionId}\n\nYou can download your book from the confirmation page.\n\nIf you have any questions, reply to this email or contact us at skillcrazyai@gmail.com.\n\nHappy learning!\nSkillCrazyAI`,
+          }),
+        });
+      } catch (emailErr) {
+        console.error("[v0] Email notification failed:", emailErr);
+        // Don't block the purchase if email fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "Payment confirmed successfully!",

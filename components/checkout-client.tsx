@@ -1,98 +1,159 @@
 "use client";
 
-import React from "react"
-
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  BookOpen,
-  FileText,
-  Layers,
-  Check,
-  Copy,
-  Download,
-  ShieldCheck,
-  Smartphone,
-} from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, Layers } from "lucide-react";
 import type { Book } from "@/lib/books";
 
-const UPI_ID = "sandeeprsingh0@oksbi";
-
-type Step = "details" | "payment" | "confirmed";
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export function CheckoutClient({ book }: { book: Book }) {
-  const [step, setStep] = useState<Step>("details");
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
-  const [transactionId, setTransactionId] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const discount = Math.round(
     ((book.originalPrice - book.price) / book.originalPrice) * 100
   );
 
-  const upiPaymentUrl = `upi://pay?pa=${UPI_ID}&pn=SkillCrazyAI&am=${book.price}&cu=INR&tn=Purchase-${book.id}`;
+  const loadRazorpayScript = () => {
+    return new Promise<boolean>((resolve) => {
+      if (document.getElementById("razorpay-script")) {
+        resolve(true);
+        return;
+      }
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiPaymentUrl)}`;
+      const script = document.createElement("script");
+      script.id = "razorpay-script";
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
-  const copyUpiId = async () => {
-    try {
-      await navigator.clipboard.writeText(UPI_ID);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for clipboard API
+  const handleRazorpayPayment = async () => {
+    if (!buyerName.trim() || !buyerEmail.trim()) {
+      alert("Please enter name and email");
+      return;
     }
-  };
 
-  const handleProceedToPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!buyerName.trim() || !buyerEmail.trim()) return;
-    setStep("payment");
-  };
+    setIsLoading(true);
 
-  const handleConfirmPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!transactionId.trim()) return;
+    const scriptLoaded = await loadRazorpayScript();
 
-    setIsSubmitting(true);
-    setError("");
+    if (!scriptLoaded) {
+      alert("Failed to load Razorpay. Check your internet connection.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const res = await fetch("/api/confirm-payment", {
+      const res = await fetch("/api/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           bookId: book.id,
-          buyerName,
-          buyerEmail,
-          transactionId: transactionId.trim(),
-          amount: book.price,
         }),
       });
 
+      if (!res.ok) {
+        alert("Failed to create order.");
+        setIsLoading(false);
+        return;
+      }
+
       const data = await res.json();
 
-      if (data.success) {
-        setStep("confirmed");
-      } else {
-        setError(data.message || "Something went wrong. Please try again.");
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: data.amount,
+        currency: data.currency,
+        name: "SkillCrazyAI",
+        description: book.title,
+        order_id: data.orderId,
+handler: function (response: any) {
+  document.body.innerHTML = `
+    <div style="
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      background:#000;
+      color:white;
+      font-family:sans-serif;
+    ">
+      <div style="text-align:center;">
+        <div style="
+          width:40px;
+          height:40px;
+          border:4px solid #0ea5e9;
+          border-top:4px solid transparent;
+          border-radius:50%;
+          margin:0 auto 20px auto;
+          animation:spin 1s linear infinite;
+        "></div>
+        <p>Redirecting to secure verification...</p>
+      </div>
+    </div>
+
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    </style>
+  `;
+
+  window.location.replace(
+    `/success?paymentId=${response.razorpay_payment_id}` +
+    `&orderId=${response.razorpay_order_id}` +
+    `&signature=${response.razorpay_signature}` +
+    `&bookId=${book.id}` +
+    `&email=${buyerEmail}`
+  );
+},
+
+
+        prefill: {
+          name: buyerName,
+          email: buyerEmail,
+        },
+        theme: {
+          color: "#0ea5e9",
+        },
+        modal: {
+          ondismiss: function () {
+            setIsLoading(false);
+          },
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+
+      paymentObject.on("payment.failed", function () {
+        alert("Payment failed. Please try again.");
+        setIsLoading(false);
+      });
+
+      paymentObject.open();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+      setIsLoading(false);
     }
   };
 
   return (
     <section className="px-6 py-12 md:py-20">
       <div className="mx-auto max-w-5xl">
-        {/* Back link */}
         <Link
           href="/"
           className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -113,6 +174,7 @@ export function CheckoutClient({ book }: { book: Book }) {
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 40vw"
+                    priority
                   />
                 </div>
               </div>
@@ -157,48 +219,8 @@ export function CheckoutClient({ book }: { book: Book }) {
             </div>
           </div>
 
-          {/* Right: Checkout Flow */}
+          {/* Right: Checkout */}
           <div className="lg:col-span-3">
-            {/* Progress Steps */}
-            <div className="mb-8 flex items-center gap-4">
-              {(["details", "payment", "confirmed"] as const).map(
-                (s, index) => (
-                  <div key={s} className="flex items-center gap-2">
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors ${
-                        step === s
-                          ? "bg-primary text-primary-foreground"
-                          : index <
-                              ["details", "payment", "confirmed"].indexOf(step)
-                            ? "bg-primary/20 text-primary"
-                            : "bg-secondary text-muted-foreground"
-                      }`}
-                    >
-                      {index <
-                      ["details", "payment", "confirmed"].indexOf(step) ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        index + 1
-                      )}
-                    </div>
-                    <span
-                      className={`hidden text-sm font-medium capitalize sm:inline ${
-                        step === s
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {s === "confirmed" ? "download" : s}
-                    </span>
-                    {index < 2 && (
-                      <div className="mx-2 hidden h-px w-8 bg-border sm:block" />
-                    )}
-                  </div>
-                )
-              )}
-            </div>
-
-            {/* Order Summary */}
             <div className="mb-6 rounded-xl border border-border bg-card p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -212,272 +234,61 @@ export function CheckoutClient({ book }: { book: Book }) {
                 <div className="text-right">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-foreground">
-                      ${book.price}
+                      ₹{book.price}
                     </span>
                     <span className="text-sm text-muted-foreground line-through">
-                      ${book.originalPrice}
+                      ₹{book.originalPrice}
                     </span>
                   </div>
                   <span className="font-mono text-xs text-primary">
-                    {`SAVE ${discount}%`}
+                    SAVE {discount}%
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Step 1: Details */}
-            {step === "details" && (
-              <div className="rounded-xl border border-border bg-card p-6 md:p-8">
-                <h3 className="text-lg font-bold text-foreground">
-                  Your Details
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  We need your details to process the order and deliver the PDF.
-                </p>
+            <div className="rounded-xl border border-border bg-card p-6 md:p-8">
+              <h3 className="text-lg font-bold text-foreground">
+                Your Details
+              </h3>
 
-                <form
-                  onSubmit={handleProceedToPayment}
-                  className="mt-6 flex flex-col gap-5"
-                >
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="mb-1.5 block font-mono text-xs text-muted-foreground"
-                    >
-                      FULL NAME
-                    </label>
-                    <input
-                      id="name"
-                      type="text"
-                      required
-                      value={buyerName}
-                      onChange={(e) => setBuyerName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="mb-1.5 block font-mono text-xs text-muted-foreground"
-                    >
-                      EMAIL ADDRESS
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      value={buyerEmail}
-                      onChange={(e) => setBuyerEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="mt-2 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/25"
-                  >
-                    Proceed to Payment
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* Step 2: Payment */}
-            {step === "payment" && (
-              <div className="flex flex-col gap-6">
-                <div className="rounded-xl border border-border bg-card p-6 md:p-8">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-bold text-foreground">
-                      Pay via UPI
-                    </h3>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Scan the QR code or use the UPI ID to make the payment.
-                  </p>
-
-                  <div className="mt-6 flex flex-col items-center gap-6 md:flex-row md:items-start">
-                    {/* QR Code */}
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="rounded-xl border border-border bg-foreground p-3">
-                        <Image
-                          src={qrCodeUrl || "/placeholder.svg"}
-                          alt="UPI QR Code for payment"
-                          width={200}
-                          height={200}
-                          className="rounded-lg"
-                          unoptimized
-                        />
-                      </div>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        Scan with any UPI app
-                      </span>
-                    </div>
-
-                    {/* Payment Details */}
-                    <div className="flex flex-1 flex-col gap-4">
-                      <div className="rounded-lg border border-border bg-secondary/50 p-4">
-                        <span className="font-mono text-xs text-muted-foreground">
-                          UPI ID
-                        </span>
-                        <div className="mt-1 flex items-center gap-2">
-                          <code className="text-sm font-semibold text-foreground">
-                            {UPI_ID}
-                          </code>
-                          <button
-                            type="button"
-                            onClick={copyUpiId}
-                            className="rounded-md bg-secondary p-1.5 text-muted-foreground transition-colors hover:text-foreground"
-                            aria-label="Copy UPI ID"
-                          >
-                            {copied ? (
-                              <Check className="h-3.5 w-3.5 text-primary" />
-                            ) : (
-                              <Copy className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-border bg-secondary/50 p-4">
-                        <span className="font-mono text-xs text-muted-foreground">
-                          AMOUNT TO PAY
-                        </span>
-                        <div className="mt-1 text-xl font-bold text-foreground">
-                          ${book.price}{" "}
-                          <span className="text-sm font-normal text-muted-foreground">
-                            (INR equivalent)
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-border bg-secondary/50 p-4">
-                        <span className="font-mono text-xs text-muted-foreground">
-                          PAYEE NAME
-                        </span>
-                        <div className="mt-1 font-semibold text-foreground">
-                          SkillCrazyAI
-                        </div>
-                      </div>
-
-                      {/* Mobile UPI deep link */}
-                      <a
-                        href={upiPaymentUrl}
-                        className="flex items-center justify-center gap-2 rounded-lg border border-primary bg-primary/10 px-4 py-3 text-sm font-semibold text-primary transition-all hover:bg-primary/20 md:hidden"
-                      >
-                        <Smartphone className="h-4 w-4" />
-                        Open UPI App
-                      </a>
-                    </div>
-                  </div>
+              <div className="mt-6 flex flex-col gap-5">
+                <div>
+                  <label className="mb-1.5 block font-mono text-xs text-muted-foreground">
+                    FULL NAME
+                  </label>
+                  <input
+                    type="text"
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    placeholder="Your full name"
+                    className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  />
                 </div>
 
-                {/* Confirm Payment */}
-                <div className="rounded-xl border border-border bg-card p-6 md:p-8">
-                  <h3 className="text-lg font-bold text-foreground">
-                    Confirm Your Payment
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    After completing the UPI payment, enter the UPI transaction
-                    reference ID below.
-                  </p>
-
-                  <form
-                    onSubmit={handleConfirmPayment}
-                    className="mt-5 flex flex-col gap-4"
-                  >
-                    <div>
-                      <label
-                        htmlFor="txnId"
-                        className="mb-1.5 block font-mono text-xs text-muted-foreground"
-                      >
-                        UPI TRANSACTION / REFERENCE ID
-                      </label>
-                      <input
-                        id="txnId"
-                        type="text"
-                        required
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        placeholder="e.g., 412345678901"
-                        className="w-full rounded-lg border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-
-                    {error && (
-                      <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                        {error}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50"
-                    >
-                      {isSubmitting
-                        ? "Verifying Payment..."
-                        : "Confirm & Get Download"}
-                    </button>
-
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      Your payment details are securely processed.
-                    </div>
-                  </form>
+                <div>
+                  <label className="mb-1.5 block font-mono text-xs text-muted-foreground">
+                    EMAIL ADDRESS
+                  </label>
+                  <input
+                    type="email"
+                    value={buyerEmail}
+                    onChange={(e) => setBuyerEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  />
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setStep("details")}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={handleRazorpayPayment}
+                  disabled={isLoading}
+                  className="mt-2 w-full rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/25 disabled:opacity-50"
                 >
-                  Go back to details
+                  {isLoading ? "Processing..." : `Pay ₹${book.price}`}
                 </button>
               </div>
-            )}
-
-            {/* Step 3: Confirmed / Download */}
-            {step === "confirmed" && (
-              <div className="rounded-xl border border-primary/30 bg-card p-6 text-center md:p-10">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
-                  <Check className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground">
-                  Payment Received!
-                </h3>
-                <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-                  Thank you for your purchase, {buyerName}. Your transaction ID{" "}
-                  <code className="font-mono text-primary">{transactionId}</code>{" "}
-                  has been recorded.
-                </p>
-
-                <div className="mx-auto mt-8 max-w-sm rounded-xl border border-border bg-secondary/50 p-6">
-                  <p className="mb-4 font-mono text-xs text-muted-foreground">
-                    YOUR DOWNLOAD IS READY
-                  </p>
-                  <a
-                    href={`/api/download?bookId=${book.id}&txnId=${transactionId}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3 font-semibold text-primary-foreground transition-all hover:shadow-lg hover:shadow-primary/25"
-                  >
-                    <Download className="h-5 w-5" />
-                    Download PDF
-                  </a>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    A confirmation email will be sent to {buyerEmail}
-                  </p>
-                </div>
-
-                <Link
-                  href="/"
-                  className="mt-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Browse more books
-                </Link>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
